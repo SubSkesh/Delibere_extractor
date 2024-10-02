@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+           http://maven.apache.org/POM/4.0.0
+           http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.universita</groupId>
+  <artifactId>progetto-pdf</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>Progetto PDF</name>
+
+  <properties>
+    <!-- Utilizzo di Java 20 per allinearsi con il primo progetto -->
+    <maven.compiler.source>20</maven.compiler.source>
+    <maven.compiler.target>20</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <pdfbox.version>2.0.27</pdfbox.version>
+    <itextpdf.version>7.2.5</itextpdf.version> <!-- Utilizzo della versione più recente -->
+  </properties>
+
+  <dependencies>
+    <!-- Dipendenze del progetto org.tableextractor -->
+    <dependency>
+      <groupId>com.github.tabulapdf</groupId>
+      <artifactId>tabula-java</artifactId>
+      <version>1.0.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>kernel</artifactId>
+      <version>${itextpdf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>layout</artifactId>
+      <version>${itextpdf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>io</artifactId>
+      <version>${itextpdf.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>${pdfbox.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>fontbox</artifactId>
+      <version>${pdfbox.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.14.1</version>
+    </dependency>
+
+    <!-- Dipendenze del progetto org.universita -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>2.0.7</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.4.11</version>
+    </dependency>
+
+    <!-- Dipendenza comune e-iceblue Spire.PDF -->
+    <dependency>
+      <groupId>e-iceblue</groupId>
+      <artifactId>spire.pdf</artifactId>
+      <version>10.9.0</version>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <!-- Repository di JitPack per Tabula -->
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+    <!-- Repository di e-iceblue -->
+    <repository>
+      <id>com.e-iceblue</id>
+      <name>e-iceblue</name>
+      <url>https://repo.e-iceblue.com/nexus/content/groups/public/</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <!-- Plugin Maven Compiler -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.10.1</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+        </configuration>
+      </plugin>
+
+      <!-- Plugin Maven Exec per eseguire le applicazioni -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <!-- Esecuzione della classe TableExtractor -->
+          <execution>
+            <id>run-tableextractor</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.tableextractor.TableExtractor</mainClass>
+            </configuration>
+          </execution>
+          <!-- Esecuzione della classe Main -->
+          <execution>
+            <id>run-universita</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.universita.Main</mainClass>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
