@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.stampa_merge</groupId>
+  <artifactId>stampa-merge</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>StampaMerge</name>
+  <description>Progetto per unire PDF da cartelle specifiche</description>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source> <!-- Assicurati che la versione corrisponda al tuo JDK -->
+    <maven.compiler.target>17</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <!-- Apache PDFBox -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>2.0.29</version> <!-- Verifica l'ultima versione disponibile -->
+    </dependency>
+
+    <!-- Dipendenze Swing sono parte della JDK, non necessitano di essere aggiunte -->
+
+    <!-- Aggiungi eventuali altre dipendenze se necessario -->
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Plugin per compilare il progetto -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.10.1</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+        </configuration>
+      </plugin>
+
+      <!-- Plugin per creare un JAR eseguibile (opzionale) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.2</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>org.stampa_merge.Main</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
