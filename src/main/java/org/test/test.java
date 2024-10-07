@@ -1,9 +1,7 @@
-package org.stampa_merge;
+package org.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -15,15 +13,13 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.io.MemoryUsageSetting;
-import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
 import javax.swing.JFrame;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.JOptionPane;
 
-public class Main {
+public class test {
 
     // Funzione che trova il file con il nome più grande all'interno di una cartella
     public static File findLargestNamedPDF(File folder) {
@@ -44,9 +40,11 @@ public class Main {
     public static void removeAllExceptLargestPDF(File folder) {
         File largestPDF = findLargestNamedPDF(folder);
         if (largestPDF != null) {
+            System.out.println("Keeping largest PDF: " + largestPDF.getName() + " in folder: " + folder.getName());
             File[] pdfFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
             for (File file : pdfFiles) {
                 if (!file.equals(largestPDF)) {
+                    System.out.println("Deleting PDF: " + file.getName() + " from folder: " + folder.getName());
                     boolean deleted = file.delete(); // Elimina tutti i file tranne quello con il nome più grande
                     if (!deleted) {
                         System.err.println("Failed to delete: " + file.getAbsolutePath());
@@ -79,81 +77,87 @@ public class Main {
         return files != null && files.length > 0;
     }
 
-    public static int getNumberOfPages(String filePath) throws IOException {
-        try (PDDocument document = PDDocument.load(new File(filePath))) {
-            return document.getNumberOfPages();
-        }
-    }
-
+    // Metodo per unire i PDF
     public static void mergePDFs(List<String> folderPaths, String mergedFilePath) throws IOException {
-        PDFMergerUtility pdfMerger = new PDFMergerUtility();
-        List<String> folderNames = new ArrayList<>();
-        List<Integer> pageCounts = new ArrayList<>();
-
-        for (String folderPath : folderPaths) {
-            File folder = new File(folderPath);
-            File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
-
-            if (files != null) {
-                for (File file : files) {
-                    pdfMerger.addSource(file);
-
-                    String folderName = folder.getName();
-                    folderNames.add(folderName);
-
-                    int numPages = getNumberOfPages(file.getAbsolutePath());
-
-                    // Rimuovere l'aggiunta di una pagina vuota
-                    // Commentare o eliminare la sezione seguente
-                    /*
-                    if (numPages % 2 == 1) {
-                        PDDocument document = new PDDocument();
-                        PDPage page = new PDPage(new PDRectangle(595, 842));
-                        document.addPage(page);
-
-                        Path tempFilePath = Files.createTempFile("temp", ".pdf");
-                        document.save(tempFilePath.toFile());
-
-                        document.close();
-
-                        pdfMerger.addSource(new File(tempFilePath.toString()));
-                        pageCounts.add(numPages + 1);
-                    } else {
-                        pageCounts.add(numPages);
-                    }
-                    */
-
-                    // Aggiungi solo il numero di pagine effettive
-                    pageCounts.add(numPages);
+        try (PDDocument mergedDocument = new PDDocument()) {
+            // Calcola il totale dei PDF da unire per gestire l'ultimo PDF
+            int totalPDFs = 0;
+            for (String folderPath : folderPaths) {
+                File folder = new File(folderPath);
+                File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
+                if (files != null) {
+                    totalPDFs += files.length;
                 }
             }
-        }
 
-        pdfMerger.setDestinationFileName(mergedFilePath);
-        pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
+            int currentPDF = 0;
 
-        try (PDDocument mergedDocument = PDDocument.load(new File(mergedFilePath))) {
-            int pageIndex = 0;
-            for (int i = 0; i < folderNames.size(); i++) {
-                String folderName = folderNames.get(i);
-                int numPages = pageCounts.get(i);
-                for (int j = 0; j < numPages; j++) {
-                    PDPage page = mergedDocument.getPage(pageIndex);
-                    try (PDPageContentStream contentStream = new PDPageContentStream(
-                            mergedDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
-                        if (j == 0) {
-                            addTitle(contentStream, page, folderName);
+            for (String folderPath : folderPaths) {
+                File folder = new File(folderPath);
+                File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
+                if (files != null) {
+                    for (File file : files) {
+                        currentPDF++;
+                        System.out.println("Processing PDF: " + file.getName() + " from folder: " + folder.getName());
+                        try (PDDocument pdf = PDDocument.load(file)) {
+                            int numPages = pdf.getNumberOfPages();
+                            if (numPages > 0) {
+                                List<PDPage> importedPages = new ArrayList<>();
+
+                                for (int i = 0; i < numPages; i++) {
+                                    PDPage page = pdf.getPage(i);
+                                    PDPage importedPage = mergedDocument.importPage(page);
+                                    importedPages.add(importedPage);
+                                    System.out.println("Imported page " + (i + 1) + " from PDF: " + file.getName());
+
+                                    if (i == 0) { // Solo la prima pagina di ogni PDF riceve un titolo
+                                        System.out.println("Adding title to first page of PDF: " + file.getName());
+                                        try (PDPageContentStream contentStream = new PDPageContentStream(
+                                                mergedDocument, importedPage, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                                            addTitle(contentStream, importedPage, folder.getName());
+                                            System.out.println("Added title to PDF: " + file.getName());
+                                        }
+                                    }
+                                }
+                                System.out.println("Added " + numPages + " pages from PDF: " + file.getName());
+
+                                // Aggiungi una pagina vuota se il numero di pagine è dispari e non è l'ultimo PDF
+                                boolean isLastPDF = currentPDF == totalPDFs;
+                                if (numPages % 2 != 0 && !isLastPDF) {
+                                    PDPage blankPage = new PDPage(new PDRectangle(595, 842)); // Dimensione A4
+                                    mergedDocument.addPage(blankPage);
+                                    System.out.println("Added blank page after PDF: " + file.getName());
+                                }
+                            }
+                        } catch (IOException e) {
+                            System.err.println("Failed to process PDF: " + file.getName() + " due to: " + e.getMessage());
+                            e.printStackTrace(); // Stampa lo stack trace completo
+                            throw e;
                         }
                     }
-                    pageIndex++;
                 }
             }
-            mergedDocument.save(new File(mergedFilePath));
+
+            // Salva il documento unito
+            try {
+                mergedDocument.save(mergedFilePath);
+                System.out.println("Merge completed successfully.");
+                JOptionPane.showMessageDialog(new JFrame(), "Merge completed successfully.");
+            } catch (IOException e) {
+                System.err.println("Error saving merged PDF: " + e.getMessage());
+                e.printStackTrace(); // Stampa lo stack trace completo
+                throw e;
+            }
+        } catch (IOException e) {
+            System.err.println("Error merging PDFs: " + e.getMessage());
+            e.printStackTrace(); // Stampa lo stack trace completo
+            JOptionPane.showMessageDialog(new JFrame(), "Error merging PDFs: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            throw e;
         }
     }
 
+    // Metodo helper per aggiungere un titolo a una pagina PDF
     public static void addTitle(PDPageContentStream contentStream, PDPage page, String title) throws IOException {
-        // Recupera la dimensione della pagina corrente
         PDRectangle mediaBox = page.getMediaBox();
         float yPosition = mediaBox.getUpperRightY() - 50; // 50 punti dal bordo superiore
 
@@ -174,7 +178,6 @@ public class Main {
         JFileChooser fileChooser = new JFileChooser();
 
         SwingUtilities.invokeLater(() -> {
-            // Rimuovere il ciclo while(true) per evitare loop infiniti
             fileChooser.setDialogTitle("Select Folder");
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
@@ -193,8 +196,6 @@ public class Main {
                         JOptionPane.showMessageDialog(frame, "No matching PDFs found in the selected folder.", "Info", JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         mergePDFs(matchingFolders, mergedFilePath);
-                        System.out.println("Merge completed successfully.");
-                        JOptionPane.showMessageDialog(frame, "Merge completed successfully.");
                     }
                 } catch (IOException e) {
                     System.err.println("Error merging PDFs: " + e.getMessage());
